@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sean's Cat Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EAF6FF;--panel:#fff;--text:#2A2350;--acc:#6C4DF6;--accText:#fff;--line:#CFC8F5;--soft:#F3F0FF;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17142B;--panel:#241F42;--text:#F1EEFF;--acc:#9B86FF;--accText:#17142B;--line:#4A4378;--soft:#2E2852}}
+:root[data-theme="dark"]{--bg:#17142B;--panel:#241F42;--text:#F1EEFF;--acc:#9B86FF;--accText:#17142B;--line:#4A4378;--soft:#2E2852}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font:500 17px/1.4 "Baloo 2","Trebuchet MS","Comic Sans MS",system-ui,sans-serif}
+.app{max-width:1000px;margin:0 auto;padding:10px 14px 40px}
+h1{margin:4px 0 8px;font-size:30px;line-height:1.1}
+h2{margin:0 0 6px;font-size:19px}
+.stage{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:4px 0 10px}
+#cat{display:flex;justify-content:center}
+#cat svg{height:min(30vh,300px);width:auto;aspect-ratio:1;max-width:100%;border-radius:24px}
+.name{display:flex;gap:8px;margin-top:8px}
+input{flex:1;min-width:0;font:inherit;font-size:20px;padding:8px 14px;border:3px solid var(--line);border-radius:16px;background:var(--panel);color:var(--text)}
+button{font:inherit;color:var(--text);cursor:pointer}
+button:focus-visible,input:focus-visible{outline:4px solid var(--acc);outline-offset:2px}
+.big{min-height:48px;padding:6px 16px;border-radius:16px;border:3px solid var(--acc);background:var(--acc);color:var(--accText);font-weight:700}
+.alt{background:var(--panel);color:var(--text);border-color:var(--line)}
+.btns{display:flex;gap:8px;margin-top:8px}
+.btns .big{flex:1}
+#msg{min-height:26px;margin:4px 2px 0;font-weight:700;color:var(--acc)}
+.grp{background:var(--panel);border-radius:20px;padding:12px 14px;margin-bottom:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.ch{min-height:44px;padding:4px 14px;border-radius:14px;border:3px solid var(--line);background:var(--soft)}
+.ch.on{background:var(--acc);border-color:var(--acc);color:var(--accText);font-weight:700}
+.sw{width:46px;height:46px;border-radius:50%;border:3px solid var(--panel);box-shadow:0 0 0 2px var(--line)}
+.sw.on{box-shadow:0 0 0 5px var(--acc)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.card{position:relative;background:var(--panel);border-radius:18px;padding:8px;text-align:center}
+.load{display:block;width:100%;border:0;background:none;padding:0}
+.load svg{width:100%;height:auto;border-radius:14px}
+.load span{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.del{position:absolute;top:4px;right:4px;min-width:36px;height:36px;border-radius:18px;border:2px solid var(--line);background:var(--panel);font-size:15px;padding:0 8px}
+.empty{grid-column:1/-1;margin:0;padding:12px 2px}
+@media (min-width:820px){
+ .app{display:grid;grid-template-columns:380px 1fr;column-gap:26px;align-items:start}
+ h1{grid-column:1/-1}
+ .stage{grid-column:1;grid-row:2;top:calc(env(safe-area-inset-top,0px) + 10px)}
+ #cat svg{height:auto;width:100%}
+ .opts{grid-column:2;grid-row:2}
+ .galwrap{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<main class="app">
+<h1>Sean's Cat Maker 🐱</h1>
+<section class="stage">
+ <div id="cat"></div>
+ <div class="name"><input id="name" maxlength="16" placeholder="Name your cat" aria-label="Cat name" autocomplete="off"></div>
+ <div class="btns">
+  <button class="big" id="save">Save cat</button>
+  <button class="big alt" id="rand">Surprise me</button>
+  <button class="big alt" id="new">New cat</button>
+ </div>
+ <p id="msg" role="status"></p>
+</section>
+<section class="opts" id="opts"></section>
+<section class="galwrap"><h2>My cats</h2><div class="gal" id="gal"></div></section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const COLORS=[['#F2A144','Orange'],['#2B2B33','Black'],['#F7F3EC','White'],['#9AA0A8','Gray'],['#8B5A3C','Brown'],['#EAD3A8','Cream'],['#F4A6C8','Pink'],['#B79AE6','Purple']];
+const EYES=[['#5DBB63','Green'],['#4A9BE8','Blue'],['#F2C230','Gold'],['#D98A2B','Amber'],['#8A5A2B','Hazel'],['#A06AD8','Purple']];
+const BGS=[['#CDEBFF','Sky'],['#FFE3A3','Sun'],['#FFD1DC','Pink'],['#D6F5D6','Grass'],['#E3D9FF','Lilac']];
+const SECTIONS=[
+ ['Fur color','fur','sw',COLORS],
+ ['Fur length','length','ch',[['short','Short'],['medium','Medium'],['long','Fluffy']]],
+ ['Pattern','pattern','ch',[['plain','Plain'],['stripes','Tabby stripes'],['spots','Spots'],['tuxedo','Tuxedo'],['patches','Calico patches'],['points','Siamese points']]],
+ ['Pattern color','patColor','sw',COLORS],
+ ['Eye color','eyes','sw',EYES],
+ ['Ears','ears','ch',[['pointy','Pointy'],['big','Big'],['folded','Folded']]],
+ ['Tail','tail','ch',[['long','Long'],['fluffy','Fluffy'],['short','Stubby']]],
+ ['Extras','extra','ch',[['none','None'],['bell','Bell collar'],['bowtie','Bow tie'],['hat','Party hat'],['glasses','Glasses'],['bow','Hair bow']]],
+ ['Background','bg','sw',BGS]
+];
+const fresh=()=>({id:Date.now(),name:'',fur:'#F2A144',length:'short',pattern:'stripes',patColor:'#8B5A3C',eyes:'#5DBB63',ears:'pointy',tail:'long',extra:'none',bg:'#CDEBFF'});
+let st=fresh(),saved=[],canKeep=true;
+try{saved=JSON.parse(localStorage.getItem('catmaker')||'[]')}catch(e){canKeep=false}
+
+function shade(h,a){const n=parseInt(h.slice(1),16),f=v=>Math.max(0,Math.min(255,Math.round(v*(1+a))));
+ return '#'+[n>>16,n>>8&255,n&255].map(v=>f(v).toString(16).padStart(2,'0')).join('')}
+const mir=s=>s.replace(/ ?\/>/,' transform="translate(300 0) scale(-1 1)"/>');
+
+function cat(c,u){
+ const dk=shade(c.fur,-.45),p=c.patColor,pk='#FF9DB2';
+ let S='';
+ S+=c.tail==='long'?'<ellipse cx="258" cy="200" rx="14" ry="52" transform="rotate(20 258 200)"/>'
+  :c.tail==='fluffy'?'<ellipse cx="258" cy="195" rx="26" ry="54" transform="rotate(20 258 195)"/>'
+  :'<circle cx="228" cy="252" r="17"/>';
+ const ear={pointy:'<polygon points="82,100 96,34 138,74"/>',big:'<polygon points="78,102 88,16 142,72"/>',folded:'<ellipse cx="100" cy="68" rx="25" ry="22"/>'}[c.ears];
+ const inner={pointy:`<polygon fill="${pk}" points="95,88 102,54 124,76"/>`,big:`<polygon fill="${pk}" points="92,88 96,42 126,74"/>`,
+  folded:`<path fill="none" stroke="${dk}" stroke-width="3" stroke-linecap="round" d="M82 72 Q100 86 118 68"/>`}[c.ears];
+ S+=ear+mir(ear)+'<ellipse cx="150" cy="225" rx="70" ry="60"/><ellipse cx="150" cy="120" rx="68" ry="58"/><ellipse cx="120" cy="278" rx="20" ry="13"/><ellipse cx="180" cy="278" rx="20" ry="13"/>';
+ if(c.length==='long'){
+  for(let i=0;i<16;i++){const a=i/16*6.283;S+=`<circle cx="${(150+68*Math.cos(a)).toFixed(1)}" cy="${(120+58*Math.sin(a)).toFixed(1)}" r="13"/>`}
+  for(let i=0;i<9;i++){const a=.1+i/8*2.94;S+=`<circle cx="${(150+70*Math.cos(a)).toFixed(1)}" cy="${(225+60*Math.sin(a)).toFixed(1)}" r="13"/>`}
+ }else if(c.length==='medium'){
+  S+='<circle cx="84" cy="140" r="11"/><circle cx="216" cy="140" r="11"/><circle cx="94" cy="162" r="10"/><circle cx="206" cy="162" r="10"/><circle cx="150" cy="190" r="14"/>';
+ }
+ const paws=`<ellipse cx="120" cy="278" rx="20" ry="13"/><ellipse cx="180" cy="278" rx="20" ry="13"/>`;
+ const ln=(d,w)=>`<path d="${d}" stroke="${p}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`;
+ const dot=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}"/>`;
+ let P='';
+ if(c.pattern==='stripes')P=ln('M150 58V90M128 62L132 88M172 62L168 88',9)+ln('M80 120H102M82 138H104M220 120H198M218 138H196',7)+ln('M70 215H110M70 242H112M230 215H190M230 242H188',9)+ln('M232 150H300M232 175H300M232 200H300M232 225H300',9);
+ else if(c.pattern==='spots')P=`<g fill="${p}">`+[[118,82,9],[184,90,7],[96,140,6],[108,215,15],[188,236,12],[150,258,9],[196,205,8],[262,170,9],[254,215,9],[240,252,8]].map(a=>dot(...a)).join('')+'</g>';
+ else if(c.pattern==='tuxedo')P=`<g fill="${p}"><ellipse cx="150" cy="144" rx="30" ry="22"/><ellipse cx="150" cy="218" rx="34" ry="42"/>${paws}</g>`;
+ else if(c.pattern==='patches')P=`<g fill="${p}">`+[[100,90,34],[212,222,40],[100,262,30],[272,160,26],[206,62,20]].map(a=>dot(...a)).join('')+'</g>';
+ else if(c.pattern==='points')P=`<g fill="${p}"><circle cx="94" cy="66" r="30"/><circle cx="206" cy="66" r="30"/><ellipse cx="150" cy="136" rx="40" ry="32"/>${paws}<rect x="232" y="90" width="80" height="220"/></g>`;
+ const eye=x=>`<ellipse cx="${x}" cy="112" rx="15" ry="17" fill="#fff"/><circle cx="${x}" cy="114" r="11" fill="${c.eyes}"/><ellipse cx="${x}" cy="114" rx="4.5" ry="9" fill="#1d1d25"/><circle cx="${x+4}" cy="108" r="3.2" fill="#fff"/>`;
+ const R='#E5484D';
+ const ex={none:'',
+  bell:`<path d="M104 174Q150 196 196 174" stroke="${R}" stroke-width="11" stroke-linecap="round" fill="none"/><circle cx="150" cy="193" r="9" fill="#FFD34D" stroke="#B8891A" stroke-width="2.5"/>`,
+  bowtie:`<path d="M150 188L118 172V204ZM150 188L182 172V204Z" fill="${R}" stroke="#B83236" stroke-width="3" stroke-linejoin="round"/><circle cx="150" cy="188" r="8" fill="#B83236"/>`,
+  hat:`<path d="M122 68L150 6L178 68Z" fill="#7C5CFF" stroke="#4B33C4" stroke-width="3" stroke-linejoin="round"/><path d="M134 44H166M128 58H172" stroke="#FFD34D" stroke-width="5"/><circle cx="150" cy="6" r="8" fill="#FFD34D"/>`,
+  glasses:`<g fill="rgba(255,255,255,.25)" stroke="#33333d" stroke-width="4"><circle cx="120" cy="113" r="23"/><circle cx="180" cy="113" r="23"/></g><path d="M143 112H157M97 110L84 104M203 110L216 104" stroke="#33333d" stroke-width="4" fill="none"/>`,
+  bow:`<path d="M204 62L230 46V80ZM204 62L178 46V80Z" fill="#FF5FA2" stroke="#D63384" stroke-width="3" stroke-linejoin="round"/><circle cx="204" cy="62" r="7" fill="#D63384"/>`}[c.extra];
+ const ring=c.length==='long'?'':`<ellipse cx="150" cy="120" rx="68" ry="58" fill="none" stroke="${dk}" stroke-width="4" opacity=".4"/>`;
+ return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(c.name||'Your cat')}">
+<defs><clipPath id="k${u}">${S}</clipPath></defs>
+<rect width="300" height="300" rx="24" fill="${c.bg}"/><ellipse cx="150" cy="291" rx="92" ry="8" fill="#000" opacity=".12"/>
+<g fill="${dk}" stroke="${dk}" stroke-width="9" stroke-linejoin="round">${S}</g><g fill="${c.fur}">${S}</g>
+<g clip-path="url(#k${u})">${P}</g>${ring}${inner}${mir(inner)}
+<circle cx="100" cy="144" r="9" fill="#FF8FA3" opacity=".45"/><circle cx="200" cy="144" r="9" fill="#FF8FA3" opacity=".45"/>
+${eye(120)}${eye(180)}
+<path d="M142 131H158L150 141Z" fill="${pk}" stroke="${pk}" stroke-width="3" stroke-linejoin="round"/>
+<path d="M150 141V147M150 147Q141 157 132 150M150 147Q159 157 168 150" stroke="#5a3a3a" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M104 138L60 130M104 146L58 146M106 154L64 164M196 138L240 130M196 146L242 146M194 154L236 164" stroke="#3b3b46" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+${ex}</svg>`;
+}
+
+$('#opts').innerHTML=SECTIONS.map(([t,k,ty,l])=>`<div class="grp" id="g-${k}"><h2>${t}</h2><div class="row">${l.map(([v,n])=>ty==='sw'
+ ?`<button class="sw" data-k="${k}" data-v="${v}" style="background:${v}" aria-label="${n}" title="${n}"></button>`
+ :`<button class="ch" data-k="${k}" data-v="${v}">${n}</button>`).join('')}</div></div>`).join('');
+
+function draw(){
+ $('#cat').innerHTML=cat(st,'m');
+ document.querySelectorAll('[data-k]').forEach(b=>{const on=st[b.dataset.k]===b.dataset.v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+ $('#g-patColor').hidden=st.pattern==='plain';
+}
+function say(t){$('#msg').textContent=t}
+function gal(){
+ $('#gal').innerHTML=saved.length?saved.map((c,i)=>`<div class="card"><button class="load" data-load="${c.id}">${cat(c,'g'+i)}<span>${esc(c.name)}</span></button><button class="del" data-del="${c.id}" aria-label="Delete ${esc(c.name)}">✕</button></div>`).join('')
+  :'<p class="empty">No cats saved yet. Make one and press Save cat!</p>';
+}
+function persist(){try{localStorage.setItem('catmaker',JSON.stringify(saved));return true}catch(e){return false}}
+function load(c){st={...c};$('#name').value=st.name;draw();say('');window.scrollTo({top:0,behavior:'smooth'})}
+
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-k]');
+ if(b){st[b.dataset.k]=b.dataset.v;draw();return}
+ const l=e.target.closest('[data-load]');
+ if(l){const c=saved.find(x=>String(x.id)===l.dataset.load);if(c)load(c);return}
+ const d=e.target.closest('[data-del]');
+ if(d){
+  if(d.dataset.armed){saved=saved.filter(x=>String(x.id)!==d.dataset.del);persist();gal();say('Cat deleted.')}
+  else{d.dataset.armed=1;d.textContent='Sure?';setTimeout(()=>{if(d.isConnected){delete d.dataset.armed;d.textContent='✕'}},3000)}
+ }
+});
+$('#name').addEventListener('input',e=>{st.name=e.target.value});
+$('#save').onclick=()=>{
+ const n=st.name.trim();
+ if(!n){say('Give your cat a name first!');$('#name').focus();return}
+ st.name=n;
+ const i=saved.findIndex(c=>c.id===st.id);
+ if(i<0)saved.unshift({...st});else saved[i]={...st};
+ const ok=persist();gal();
+ say(ok?`Saved ${n}! 🐾`:`${n} is saved for now, but will be gone when you close this page.`);
+};
+$('#new').onclick=()=>{st=fresh();$('#name').value='';draw();say('')};
+$('#rand').onclick=()=>{
+ const pick=l=>l[Math.floor(Math.random()*l.length)];
+ SECTIONS.forEach(([,k,ty,l])=>{st[k]=pick(l)[0]});
+ draw();say('Surprise! Change anything you like.');
+};
+draw();gal();
+</script>
+</body>
+</html>
