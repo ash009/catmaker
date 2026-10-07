@@ -75,6 +75,7 @@ const COLORS=[['#F2A144','Orange'],['#2B2B33','Black'],['#F7F3EC','White'],['#9A
 const EYES=[['#5DBB63','Green'],['#4A9BE8','Blue'],['#F2C230','Gold'],['#D98A2B','Amber'],['#8A5A2B','Hazel'],['#A06AD8','Purple']];
 const BGS=[['#CDEBFF','Sky'],['#FFE3A3','Sun'],['#FFD1DC','Pink'],['#D6F5D6','Grass'],['#E3D9FF','Lilac']];
 const SECTIONS=[
+ ['Size','size','ch',[['small','Small kitten'],['medium','Medium'],['big','Big cat']]],
  ['Fur color','fur','sw',COLORS],
  ['Fur length','length','ch',[['short','Short'],['medium','Medium'],['long','Fluffy']]],
  ['Pattern','pattern','ch',[['plain','Plain'],['stripes','Tabby stripes'],['spots','Spots'],['tuxedo','Tuxedo'],['patches','Calico patches'],['points','Siamese points']]],
@@ -85,7 +86,7 @@ const SECTIONS=[
  ['Extras','extra','ch',[['none','None'],['bell','Bell collar'],['bowtie','Bow tie'],['hat','Party hat'],['glasses','Glasses'],['bow','Hair bow']]],
  ['Background','bg','sw',BGS]
 ];
-const fresh=()=>({id:Date.now(),name:'',fur:'#F2A144',length:'short',pattern:'stripes',patColor:'#8B5A3C',eyes:'#5DBB63',ears:'pointy',tail:'long',extra:'none',bg:'#CDEBFF'});
+const fresh=()=>({id:Date.now(),name:'',size:'medium',fur:'#F2A144',length:'short',pattern:'stripes',patColor:'#8B5A3C',eyes:'#5DBB63',ears:'pointy',tail:'long',extra:'none',bg:'#CDEBFF'});
 let st=fresh(),saved=[],canKeep=true;
 try{saved=JSON.parse(localStorage.getItem('catmaker')||'[]')}catch(e){canKeep=false}
 
@@ -129,7 +130,9 @@ function cat(c,u){
  const ring=c.length==='long'?'':`<ellipse cx="150" cy="120" rx="68" ry="58" fill="none" stroke="${dk}" stroke-width="4" opacity=".4"/>`;
  return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(c.name||'Your cat')}">
 <defs><clipPath id="k${u}">${S}</clipPath></defs>
-<rect width="300" height="300" rx="24" fill="${c.bg}"/><ellipse cx="150" cy="291" rx="92" ry="8" fill="#000" opacity=".12"/>
+<rect width="300" height="300" rx="24" fill="${c.bg}"/>
+<g transform="translate(150 291) scale(${{small:.68,medium:.85,big:1}[c.size]||.85}) translate(-150 -291)">
+<ellipse cx="150" cy="291" rx="92" ry="8" fill="#000" opacity=".12"/>
 <g fill="${dk}" stroke="${dk}" stroke-width="9" stroke-linejoin="round">${S}</g><g fill="${c.fur}">${S}</g>
 <g clip-path="url(#k${u})">${P}</g>${ring}${inner}${mir(inner)}
 <circle cx="100" cy="144" r="9" fill="#FF8FA3" opacity=".45"/><circle cx="200" cy="144" r="9" fill="#FF8FA3" opacity=".45"/>
@@ -137,7 +140,7 @@ ${eye(120)}${eye(180)}
 <path d="M142 131H158L150 141Z" fill="${pk}" stroke="${pk}" stroke-width="3" stroke-linejoin="round"/>
 <path d="M150 141V147M150 147Q141 157 132 150M150 147Q159 157 168 150" stroke="#5a3a3a" stroke-width="3" stroke-linecap="round" fill="none"/>
 <path d="M104 138L60 130M104 146L58 146M106 154L64 164M196 138L240 130M196 146L242 146M194 154L236 164" stroke="#3b3b46" stroke-width="2" stroke-linecap="round" opacity=".55"/>
-${ex}</svg>`;
+${ex}</g></svg>`;
 }
 
 $('#opts').innerHTML=SECTIONS.map(([t,k,ty,l])=>`<div class="grp" id="g-${k}"><h2>${t}</h2><div class="row">${l.map(([v,n])=>ty==='sw'
@@ -155,7 +158,7 @@ function gal(){
   :'<p class="empty">No cats saved yet. Make one and press Save cat!</p>';
 }
 function persist(){try{localStorage.setItem('catmaker',JSON.stringify(saved));return true}catch(e){return false}}
-function load(c){st={...c};$('#name').value=st.name;draw();say('');window.scrollTo({top:0,behavior:'smooth'})}
+function load(c){st={size:'medium',...c};$('#name').value=st.name;draw();say('');window.scrollTo({top:0,behavior:'smooth'})}
 
 document.addEventListener('click',e=>{
  const b=e.target.closest('[data-k]');
